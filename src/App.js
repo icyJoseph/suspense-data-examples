@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback, Suspense } from "react";
+import React, { Suspense } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 
-//https://codesandbox.io/s/suspense-data-fetching-297gn
-//https://codesandbox.io/s/suspense-data-fetching-end-i2ey2
+// https://codesandbox.io/s/suspense-data-fetching-297gn
+// https://codesandbox.io/s/suspense-data-fetching-end-i2ey2
 
 const delay = duration => new Promise(resolve => setTimeout(resolve, duration));
 
@@ -24,44 +24,28 @@ class Catch extends React.Component {
   }
 }
 
-let globalCache;
+const globalCache = {};
 
-function useData(getData, deps) {
-  if (globalCache) return globalCache;
-
-  // Suspense will catch this!
-  throw getData().then(data => {
-    globalCache = data;
-  });
-
-  // const [state, setState] = useState({
-  //   loading: true,
-  //   data: null,
-  //   error: null
-  // });
-
-  // useEffect(() => {
-  //   setState({ data: null, error: null, loading: true });
-  //   getData()
-  //     .then(data => {
-  //       setState({ data, error: null, loading: false });
-  //     })
-  //     .catch(error => {
-  //       setState({ data: null, error, loading: false });
-  //     });
-  // }, [getData]);
-
-  // return state;
+function createResource(name, getData) {
+  globalCache[name] = globalCache[name] || {};
+  const cache = globalCache[name];
+  return {
+    cache,
+    read(value) {
+      if (cache[value]) return cache[value];
+      throw getData().then(result => {
+        cache[value] = result;
+      });
+    }
+  };
 }
 
 function Data({ children }) {
-  const data = useData(async () => {
+  const resource = createResource("hello world", async () => {
     await delay(1000);
-
-    return "Hello World";
-  }, []);
-
-  return children(data);
+    return "hello world";
+  });
+  return children(resource.read());
 }
 
 // While our catch, error boundary, catches errors
@@ -69,22 +53,20 @@ function Data({ children }) {
 function App() {
   return (
     <div className="App">
-      <Catch>
-        <Suspense fallback={<div>Loading</div>}>
-          <Data>
-            {data =>
-              data && (
-                <header className="App-header">
-                  <img src={logo} className="App-logo" alt="logo" />
-                  <p>
-                    <code>{data}</code>
-                  </p>
-                </header>
-              )
-            }
-          </Data>
-        </Suspense>
-      </Catch>
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <Catch>
+          <Suspense fallback={<p>Loading</p>}>
+            <Data>
+              {data => (
+                <p>
+                  <code>{data}</code>
+                </p>
+              )}
+            </Data>
+          </Suspense>
+        </Catch>
+      </header>
     </div>
   );
 }
