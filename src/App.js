@@ -6,7 +6,7 @@ const delay = duration => new Promise(accept => setTimeout(accept, duration));
 
 const coinFlip = () => Math.random() >= 0.5;
 
-function useData() {
+function useData(fetcher) {
   const [state, setState] = React.useState({
     error: null,
     data: null,
@@ -15,21 +15,29 @@ function useData() {
 
   React.useEffect(() => {
     setState({ error: null, loading: true, data: null });
-    delay(1000)
-      .then(() => {
+    fetcher()
+      .then(data => {
         if (coinFlip()) {
-          return setState({ error: null, loading: false, data: "Hello World" });
+          return setState({ error: null, loading: false, data });
         }
         return undefined.reduce();
       })
       .catch(() => setState({ error: "Failure", loading: false, data: null }));
-  }, []);
+  }, [fetcher]);
 
   return state;
 }
 
+const getData = async () => {
+  await delay(1000);
+  return "Hello World";
+};
+
 function App() {
-  const { data, error, loading } = useData();
+  // fails into an infinite loop without useCallback
+  const sameGetter = React.useCallback(getData);
+  const { data, error, loading } = useData(sameGetter);
+
   return (
     <div className="App">
       <header className="App-header">
