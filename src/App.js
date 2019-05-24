@@ -6,23 +6,37 @@ const delay = duration => new Promise(accept => setTimeout(accept, duration));
 
 const coinFlip = () => Math.random() >= 0.5;
 
+const [SUCCESS, LOADING, ERROR] = ["s", "l", "e"];
+
+const initialState = { error: null, data: null, loading: false };
+
+function reducer(state, { type, ...action }) {
+  switch (type) {
+    case SUCCESS:
+      return { ...state, error: null, loading: false, ...action };
+    case LOADING:
+      return { ...state, error: null, loading: true };
+    case ERROR:
+      return { ...state, error: "Failure", loading: false };
+    default:
+      throw new Error("Unknown Action");
+  }
+}
+
 function useData() {
-  const [state, setState] = React.useState({
-    error: null,
-    data: null,
-    loading: false
-  });
+  const [state, dispatch] = React.useReducer(reducer, initialState);
 
   React.useEffect(() => {
-    setState({ error: null, loading: true, data: null });
+    dispatch({ type: LOADING });
+
     delay(1000)
       .then(() => {
         if (coinFlip()) {
-          return setState({ error: null, loading: false, data: "Hello World" });
+          return dispatch({ type: SUCCESS, data: "Hello World" });
         }
         return undefined.reduce();
       })
-      .catch(() => setState({ error: "Failure", loading: false, data: null }));
+      .catch(() => dispatch({ type: ERROR }));
   }, []);
 
   return state;
