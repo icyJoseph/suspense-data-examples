@@ -2,10 +2,15 @@ import React, { Suspense } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 
-// https://codesandbox.io/s/suspense-data-fetching-297gn
-// https://codesandbox.io/s/suspense-data-fetching-end-i2ey2
+/* remove iframes
+
+[...document.getElementsByTagName('iframe')].forEach(iframe => document.body.removeChild(iframe));
+
+*/
 
 const delay = duration => new Promise(resolve => setTimeout(resolve, duration));
+
+const coinFlip = () => Math.random() >= 0.5;
 
 class Catch extends React.Component {
   state = { hasError: false };
@@ -17,7 +22,7 @@ class Catch extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      return <h1>An error occurs</h1>;
+      return <p>An error occurs</p>;
     }
 
     return this.props.children;
@@ -32,20 +37,35 @@ function createResource(name, getData) {
   return {
     cache,
     read(value) {
-      if (cache[value]) return cache[value];
-      throw getData().then(result => {
-        cache[value] = result;
-      });
+      if (cache[value]) {
+        if (cache[value] instanceof Error) {
+          throw cache[value];
+        }
+        return cache[value];
+      }
+      throw getData()
+        .then(result => {
+          if (coinFlip()) {
+            cache[value] = result;
+            return;
+          }
+          return undefined.reduce();
+        })
+        .catch(err => {
+          cache[value] = err;
+        });
     }
   };
 }
 
+const getData = async () => {
+  await delay(1000);
+  return "hello world";
+};
+
 function Data({ children }) {
-  const resource = createResource("hello world", async () => {
-    await delay(1000);
-    return "hello world";
-  });
-  return children(resource.read());
+  const greeting = createResource("greeting", getData);
+  return children(greeting.read());
 }
 
 // While our catch, error boundary, catches errors
