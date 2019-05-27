@@ -63,8 +63,13 @@ const getData = async () => {
 
 function Data({ children }) {
   const { data, loading } = useData(getData);
-
-  return children({ data, loading });
+  return (
+    <p>
+      {loading && <code>Loading...</code>}
+      {data && <code>{data}</code>}
+    </p>
+  );
+  // return children({ data, loading });
 }
 
 function App() {
@@ -74,12 +79,12 @@ function App() {
         <img src={logo} className="App-logo" alt="logo" />
         <Catch>
           <Data>
-            {({ data, loading }) => (
+            {/* {({ data, loading }) => (
               <p>
                 {loading && <code>Loading...</code>}
                 {data && <code>{data}</code>}
               </p>
-            )}
+            )} */}
           </Data>
         </Catch>
       </header>
